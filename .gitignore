@@ -1,3 +1,9 @@
 *.raw
+*.qcow2
+*.iso
 cache/
 mnt/
+liox_tmp/
+result
+result-fd
+qemushared/rootfs.tar.zstd

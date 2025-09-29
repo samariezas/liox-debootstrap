@@ -1,0 +1,11 @@
+--- /etc/grub.d/10_linux	2023-10-02 17:11:34.000000000 +0300
++++ /etc/grub.d/10_linux.mod	2024-02-12 03:56:22.536887682 +0200
+@@ -141,7 +141,7 @@
+       fi
+       echo "menuentry '$(echo "$title" | grub_quote)' ${CLASS} \$menuentry_id_option 'gnulinux-$version-$type-$boot_device_id' {" | sed "s/^/$submenu_indentation/"
+   else
+-      echo "menuentry '$(echo "$os" | grub_quote)' ${CLASS} \$menuentry_id_option 'gnulinux-simple-$boot_device_id' {" | sed "s/^/$submenu_indentation/"
++      echo "menuentry '$(echo "$os" | grub_quote)' --unrestricted ${CLASS} \$menuentry_id_option 'gnulinux-simple-$boot_device_id' {" | sed "s/^/$submenu_indentation/"
+   fi      
+   if [ "$quick_boot" = 1 ]; then
+       echo "	recordfail" | sed "s/^/$submenu_indentation/"

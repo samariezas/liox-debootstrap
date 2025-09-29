@@ -1,8 +1,11 @@
-#!/bin/bash
-set -e
-if [ -d ./mnt ]
-then
-	umount -R ./mnt || true
-	rmdir ./mnt
-fi
-losetup -D
+#!/usr/bin/env bash
+set -x
+sudo umount -l mnt/proc
+sudo umount -l mnt/sys
+sudo umount -l mnt/dev
+sudo umount mnt/var/cache/apt/archives
+sudo umount mnt/tmp
+
+# sudo umount -l mnt/run
+
+! mount | grep mnt

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+
+for P in $(ls /usr/share/liox-config/patches/*.patch); do
+    patch -d/ -p0 < ${P}
+done
+
+if [ -d /usr/share/liox-config/post-inst-overlay ]; then
+    cp -aT /usr/share/liox-config/post-inst-overlay /
+fi
+
+useradd -m -s /bin/bash -p $(cat /usr/share/liox-config/d0-shadow) d0
+useradd -m -s /bin/bash -p $(cat /usr/share/liox-config/d1-shadow) d1
+useradd -m -s /bin/bash -p $(cat /usr/share/liox-config/d2-shadow) d2
+shred --remove /usr/share/liox-config/d*-shadow
+
+# Be doubly sure
+chown root:root /etc/olimp-control/key
+chmod 400 /etc/olimp-control/key
+
+systemctl disable apt-daily-upgrade.timer
+systemctl disable apt-daily.timer
+systemctl disable man-db.timer
+systemctl mask apparmor.service
+
+/usr/share/liox-config/downgrade_codeblocks.sh
+
+/usr/share/liox-config/install_vscode_ext.sh d0
+sleep 10
+/usr/share/liox-config/install_vscode_ext.sh d1
+sleep 10
+/usr/share/liox-config/install_vscode_ext.sh d2
+
+cat >> /etc/hosts <<EOF
+99.80.22.14 olimp.cms.lmio.lt
+3.127.114.194 ctrl.lmio.lt
+127.0.0.1 marketplace.visualstudio.com
+EOF
+
+systemctl enable systemd-networkd.service
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+localepurge
+
+update-grub
+
+# This is a hack to make sure 'shim' is not used for booting
+cp /boot/efi/EFI/BOOT/grubx64.efi /boot/efi/EFI/BOOT/BOOTX64.efi
+iconv -f UTF-8 -t UTF-16LE /usr/share/liox-config/boot-entry.csv > /boot/efi/EFI/debian/BOOTX64.CSV
+
+sed -i '/boot\/efi/d' /etc/fstab
