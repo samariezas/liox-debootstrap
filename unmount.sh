@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-set -x
-sudo umount -l mnt/proc
-sudo umount -l mnt/sys
-sudo umount -l mnt/dev
-sudo umount mnt/var/cache/apt/archives
-sudo umount mnt/tmp
+set -xeu
 
-# sudo umount -l mnt/run
+source ./config.sh
+umount -l mnt/proc
+umount -l mnt/sys
+umount -l mnt/dev
+umount mnt/var/cache/apt/archives
+umount mnt/tmp
 
 ! mount | grep mnt

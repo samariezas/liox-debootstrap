@@ -18,18 +18,18 @@ fi
 mkdir -p $CACHE_DIR
 mkdir -p $CHROOT_CACHE_DIR
 
-if [ -f $BUILD_IMAGE ]
-then
-	read -p "Image \`$BUILD_IMAGE\` already exists. Rebuild? [y/N] " prompt
-	if [[ $prompt != "y" && $prompt != "Y" ]]
-	then
-		echo "Aborting..."
-		exit 2
-	fi
-fi
+# if [ -f $BUILD_IMAGE ]
+# then
+# 	read -p "Image \`$BUILD_IMAGE\` already exists. Rebuild? [y/N] " prompt
+# 	if [[ $prompt != "y" && $prompt != "Y" ]]
+# 	then
+# 		echo "Aborting..."
+# 		exit 2
+# 	fi
+# fi
 
 mkdir $BUILD_DIR
-debootstrap --cache-dir=$(realpath $CACHE_DIR) --arch $ARCH stable $BUILD_DIR https://deb.debian.org/debian
+debootstrap --cache-dir=$(realpath $DEBOOTSTRAP_CACHE_DIR) --arch $ARCH stable $BUILD_DIR https://deb.debian.org/debian
 
 mkdir -p $BUILD_DIR/boot/efi
 mkdir -p $BUILD_DIR/var/cache/apt/archives
@@ -47,3 +47,5 @@ APT::Keep-Downloaded-Packages "true";
 EOF
 chroot $BUILD_DIR /bin/bash -c \
 	"/bin/env -i /bin/bash /chroot-script.sh"
+./unmount.sh
+
