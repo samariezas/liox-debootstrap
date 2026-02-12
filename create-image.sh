@@ -8,6 +8,7 @@ then
 fi
 
 IMAGE_SIZE_MB=16384
+SWAP_SIZE_MB=4096
 ARCH="amd64"
 BUILD_DIR="./mnt"
 DEBOOTSTRAP_CACHE_DIR="./.cache/debootstrap"
@@ -35,10 +36,18 @@ fi
 
 set -x
 BLOCK_DEVICE=$(sudo losetup --show -f "${BUILD_IMAGE}")
+SWAP_END=$((513+SWAP_SIZE_MB))
 EFIPART="${BLOCK_DEVICE}p1"
-ROOTPART="${BLOCK_DEVICE}p2"
-parted -s "${BLOCK_DEVICE}" mklabel gpt mkpart ESP fat32 1MiB 513MiB set 1 boot on set 1 esp on mkpart primary ext4 513MiB 100%
+SWAPPART="${BLOCK_DEVICE}p2"
+ROOTPART="${BLOCK_DEVICE}p3"
+parted -s "${BLOCK_DEVICE}" \
+    mklabel gpt \
+    mkpart ESP fat32 1MiB 513MiB \
+    set 1 boot on set 1 esp on \
+    mkpart primary linux-swap 513MiB "${SWAP_END}MiB" \
+    mkpart primary ext4 "${SWAP_END}MiB" 100%
 mkfs.fat -F32 "${EFIPART}"
+mkswap "${SWAPPART}"
 mkfs.ext4 "${ROOTPART}"
 mkdir -p "${BUILD_DIR}"
 mount "${ROOTPART}" "${BUILD_DIR}"
@@ -87,5 +96,6 @@ chroot "${BUILD_DIR}" /bin/bash -c \
 	"/bin/env -i \
     BLOCK_DEVICE=${BLOCK_DEVICE} \
     EFIPART=${EFIPART} \
+    SWAPPART=${SWAPPART} \
     ROOTPART=${ROOTPART} \
     /bin/bash /chroot-script.sh"

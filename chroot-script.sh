@@ -119,9 +119,11 @@ password_pbkdf2 lioadmin ${GRUB_PWD_HASH}
 EOF
 
 EFI_UUID=$(blkid -s UUID -o value "${EFIPART}")
+SWAP_UUID=$(blkid -s UUID -o value "${SWAPPART}")
 ROOT_UUID=$(blkid -s UUID -o value "${ROOTPART}")
 cat << EOF > /etc/fstab
 UUID=${EFI_UUID}    /boot/efi   vfat umask=0077                     0   1
+UUID=${SWAP_UUID}   swap        swap defaults                       0   0
 UUID=${ROOT_UUID}   /           ext4 defaults,errors=remount-ro     0   1
 EOF
 grub-install --removable --target=x86_64-efi "${BLOCK_DEVICE}"
