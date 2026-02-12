@@ -1,32 +1,35 @@
 #!/usr/bin/env bash
-set -xeu
+set -xeuo pipefail
 
-source config.sh
+LIOADMIN_PWD="lioadmin"
+GRUB_PWD="grub"
+HOSTNAME="lioxbox"
+TIMEZONE="Europe/Vilnius"
 
-LANG=C.UTF-8
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-HOME=/root
-SHELL=/bin/bash
-TERM=xterm
-DEBIAN_FRONTEND=noninteractive
+export LANG=C.UTF-8
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export HOME=/root
+export SHELL=/bin/bash
+export TERM=xterm
+export DEBIAN_FRONTEND=noninteractive
 
 apt -y install lsb-release
 CODENAME=$(lsb_release --codename --short)
 cat > /etc/apt/sources.list << EOF
-deb https://deb.debian.org/debian/ $CODENAME main contrib non-free non-free-firmware
-deb-src https://deb.debian.org/debian/ $CODENAME main contrib non-free non-free-firmware
+deb https://deb.debian.org/debian/ ${CODENAME} main contrib non-free non-free-firmware
+deb-src https://deb.debian.org/debian/ ${CODENAME} main contrib non-free non-free-firmware
 
-deb https://security.debian.org/debian-security $CODENAME-security main contrib non-free non-free-firmware
-deb-src https://security.debian.org/debian-security $CODENAME-security main contrib non-free non-free-firmware
+deb https://security.debian.org/debian-security ${CODENAME}-security main contrib non-free non-free-firmware
+deb-src https://security.debian.org/debian-security ${CODENAME}-security main contrib non-free non-free-firmware
 
-deb https://deb.debian.org/debian/ $CODENAME-updates main contrib non-free non-free-firmware
-deb-src https://deb.debian.org/debian/ $CODENAME-updates main contrib non-free non-free-firmware
+deb https://deb.debian.org/debian/ ${CODENAME}-updates main contrib non-free non-free-firmware
+deb-src https://deb.debian.org/debian/ ${CODENAME}-updates main contrib non-free non-free-firmware
 EOF
 
 apt -y update
 
 rm /etc/localtime
-echo $TIMEZONE > /etc/timezone
+echo "${TIMEZONE}" > /etc/timezone
 dpkg-reconfigure -f noninteractive tzdata
 
 apt -y install locales
@@ -37,10 +40,10 @@ echo "ru_RU.UTF-8 UTF-8" >> /etc/locale.gen
 echo "LANG=\"en_US.UTF-8\"" > /etc/default/locale
 locale-gen
 
-echo $HOSTNAME > /etc/hostname
+echo "${HOSTNAME}" > /etc/hostname
 cat > /etc/hosts << EOF
 127.0.0.1 localhost
-127.0.1.1 $HOSTNAME
+127.0.1.1 ${HOSTNAME}
 
 # The following lines are desirable for IPv6 capable hosts
 ::1     localhost ip6-localhost ip6-loopback
@@ -97,8 +100,24 @@ echo "GRUB_DISABLE_OS_PROBER=true" >> /etc/default/grub
 # useradd -m -s /bin/bash -p ${D0_PWD_HASH} d0
 # useradd -m -s /bin/bash -p ${D1_PWD_HASH} d1
 # useradd -m -s /bin/bash -p ${D2_PWD_HASH} d2
-LIOADMIN_PWD_HASH=$(echo "test" | mkpasswd -s -m sha-512)
-useradd -m -s /bin/bash -p ${LIOADMIN_PWD_HASH} lioadmin
+LIOADMIN_PWD_HASH=$(echo "${LIOADMIN_PWD}" | mkpasswd -s -m sha-512)
+useradd -m -s /bin/bash -p "${LIOADMIN_PWD_HASH}" lioadmin
 usermod -a -G sudo lioadmin
 
-rm -rf /includes.chroot /etc/apt/apt.conf.d/99cache /chroot-script.sh /config.sh
+GRUB_PWD_HASH=$(printf "%s\n%s" "${GRUB_PWD}" "${GRUB_PWD}" | grub-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}')
+mkdir -p /boot/grub
+cat > /boot/grub/custom.cfg <<EOF
+set superusers="lioadmin"
+password_pbkdf2 lioadmin ${GRUB_PWD_HASH}
+EOF
+
+EFI_UUID=$(blkid -s UUID -o value "${EFIPART}")
+ROOT_UUID=$(blkid -s UUID -o value "${ROOTPART}")
+cat << EOF > /etc/fstab
+UUID=${EFI_UUID}    /boot/efi   vfat umask=0077                     0   1
+UUID=${ROOT_UUID}   /           ext4 defaults,errors=remount-ro     0   1
+EOF
+
+grub-install --removable --target=x86_64-efi "${BLOCK_DEVICE}"
+update-grub
+rm -rf /includes.chroot /etc/apt/apt.conf.d/99cache /chroot-script.sh

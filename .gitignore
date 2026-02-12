@@ -1,7 +1,9 @@
 *.raw
+*.img
 *.qcow2
 *.iso
 cache/
+.cache/
 mnt/
 liox_tmp/
 result
