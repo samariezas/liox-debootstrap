@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
+CTRL_KEY="abcde"
 LIOADMIN_PWD="lioadmin"
 GRUB_PWD="grub"
 HOSTNAME="lioxbox"
@@ -98,6 +99,11 @@ for P in $(ls /usr/share/liox-config/patches/*.patch); do
 done
 echo "GRUB_DISABLE_OS_PROBER=true" >> /etc/default/grub
 
+mkdir -p /etc/olimp-control
+echo -n "${CTRL_KEY}" > /etc/olimp-control/key
+chown root:root /etc/olimp-control/key
+chmod 400 /etc/olimp-control/key
+
 # useradd -m -s /bin/bash -p ${D0_PWD_HASH} d0
 # useradd -m -s /bin/bash -p ${D1_PWD_HASH} d1
 # useradd -m -s /bin/bash -p ${D2_PWD_HASH} d2
@@ -118,7 +124,6 @@ cat << EOF > /etc/fstab
 UUID=${EFI_UUID}    /boot/efi   vfat umask=0077                     0   1
 UUID=${ROOT_UUID}   /           ext4 defaults,errors=remount-ro     0   1
 EOF
-
 grub-install --removable --target=x86_64-efi "${BLOCK_DEVICE}"
 update-grub
 rm -rf /includes.chroot /etc/apt/apt.conf.d/99cache /chroot-script.sh
