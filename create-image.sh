@@ -80,6 +80,9 @@ cat << EOF > "${BUILD_DIR}/etc/apt/apt.conf.d/99cache"
 Binary::apt::APT::Keep-Downloaded-Packages "true";
 APT::Keep-Downloaded-Packages "true";
 EOF
+mkdir -p "${BUILD_DIR}/etc/apt/preferences.d"
+cp ./apt-preferences/* "${BUILD_DIR}/etc/apt/preferences.d"
+cp ./olimp-control*.deb "${BUILD_DIR}/tmp"
 chroot "${BUILD_DIR}" /bin/bash -c \
 	"/bin/env -i \
     BLOCK_DEVICE=${BLOCK_DEVICE} \

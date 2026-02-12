@@ -88,7 +88,8 @@ apt -y install \
     clang firmware-iwlwifi kdevelop \
     libreoffice-calc libreoffice-impress libreoffice-kf6 libreoffice-plasma libreoffice-writer \
     neovim ruby vim whois \
-    sublime-text code
+    sublime-text code \
+    /tmp/olimp-control*.deb
 
 cp -rf /includes.chroot/* /
 
